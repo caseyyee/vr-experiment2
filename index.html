@@ -59,8 +59,9 @@
 
     <!--    <button onclick="toggleVR();">Toggle VR</button> -->
     <!-- this version of three.js has WebGL Renderer's setSize method modified to take a canvas resolution scale factor -->
-    <script src="vendor/three.min.js"></script>
-    <script src="vrutils.js"></script>
+    <script src="lib/three.min.js"></script>
+    <script src="lib/ColladaLoader.js"></script>
+    <script src="lib/vrutils.js"></script>
 
     <script>
 
@@ -100,13 +101,13 @@ function mprint(m) {
 
 function init() {
   container = document.getElementById("container");
-  camera = new THREE.PerspectiveCamera( 70, renderWidth / renderHeight, 1, 10000 );
+  camera = new THREE.PerspectiveCamera( 90, renderWidth / renderHeight, 0.010, 10000 );
   
   cameraLeft = new THREE.Camera();
   cameraRight = new THREE.Camera();
 
   scene = new THREE.Scene();  
-  var geometry = new THREE.BoxGeometry(300, 100, 300);
+  var geometry = new THREE.BoxGeometry(10, 5, 15);
   var material = new THREE.MeshPhongMaterial({  // walls
       overdraw: 0.5, 
       color: 0xffFFff, 
@@ -115,14 +116,64 @@ function init() {
       side: THREE.BackSide,
       shading: THREE.FlatShading 
     });
+
   var cube = new THREE.Mesh( geometry, material );
-  cube.position.y = 20;
 
-  scene.add(cube)
+  scene.add(cube);
 
-  var light = new THREE.PointLight( 0xffffff, 1, 800 ); 
-  light.position.set( 8, 20, 0 ); 
+
+  // yiles model import is chewed.  need to update model in real software to get rid of the need for these adjustments.
+  // var loader = new THREE.ColladaLoader();
+  // loader.load('assets/office.dae', function (result) {
+  //   var x = -1; 
+  //   var y = -1.2; 
+  //   var z = 0.9; 
+
+  //   var model = result.scene;
+  //   model.position.set(x, y, z);
+  //   model.rotation.x = -90 * Math.PI / 180;
+
+  //   scene.add(result.scene);
+  // });
+
+  var heuristics = new THREE.Object3D();
+    heuristics.position.set(0,0,-0.5)
+    
+
+  var rings = [
+    [0.398, 0x1DB992],
+    [0.26, 0x22CAF0],
+    [0.13, 0xF8BC4A],
+    [0.043, 0xE04540]
+  ]
+
+  for ( var i = 0; i < rings.length; i++) {
+    var radius = rings[i][0];
+    var color = rings[i][1]
+    var circle = new THREE.Mesh(
+      new THREE.CircleGeometry( radius, 32 ),
+      new THREE.MeshBasicMaterial( {color: color, transparent: true, opacity: .5} )
+    );
+    circle.position.set( 0, 0, i * .001 ) //separate the circles slightly so they're easy to read
+    heuristics.add( circle );
+  }
+
+  scene.add(heuristics);
+
+  var light = new THREE.PointLight( 0xffffff, 1, 500 ); 
+  light.position.set( 1, 1, 0 ); 
   scene.add( light );
+
+  // var light = new THREE.DirectionalLight( 0xffffff, .8 );
+  //       light.position.set( 2, 2, 20 );
+  //       scene.add( light );
+
+
+  // var directionalLight = new THREE.DirectionalLight( 0xffffff, 0.5 ); 
+  // directionalLight.position.set( 1, 1, 0 ); 
+  // directionalLight.castShadow = true;
+
+  // scene.add( directionalLight );
 
 
   var canvas = document.getElementById('three_canvas');
@@ -130,6 +181,7 @@ function init() {
     canvas:canvas,
     antialias: true
   });
+  renderer.shadowMapEnabled = true;
   renderer.setClearColor( 0xffffff );
   renderer.setSize(renderWidth, renderHeight);
 }
@@ -142,10 +194,8 @@ function setRenderSize(width, height, vr) {
   if (vr) {
     cameraLeft.projectionMatrix = FovToProjection(vrHMD.getRecommendedEyeFieldOfView("left"));
     cameraRight.projectionMatrix = FovToProjection(vrHMD.getRecommendedEyeFieldOfView("right"));
-
     var leftTx = vrHMD.getEyeTranslation("left");
     var rightTx = vrHMD.getEyeTranslation("right");
-
     cameraLeft.position.add(new THREE.Vector3(leftTx.x, leftTx.y, leftTx.z));
     cameraRight.position.add(new THREE.Vector3(rightTx.x, rightTx.y, rightTx.z));
 
@@ -167,8 +217,10 @@ function setRenderSize(width, height, vr) {
 }
 
 function onDocumentMouseMove(event) {
-  mouseX = ( event.clientX - windowHalfX ) * 10;
-  mouseY = ( event.clientY - windowHalfY ) * 10;
+  // mouseX = ( event.clientX - windowHalfX ) * 10;
+  // mouseY = ( event.clientY - windowHalfY ) * 10;
+  mouseX = event.clientX;
+  mouseY = event.clientY;
 }
 
 function animate() {
@@ -208,8 +260,14 @@ function render() {
     renderer.render(scene, cameraRight);
   } else {
     // use mouse position as input for the non-VR camera
-    camera.position.x += ( mouseX - camera.position.x ) * .05;
-    camera.position.y += ( - mouseY - camera.position.y ) * .05;
+    
+    var degY = (mouseX-(renderWidth/2))/(renderWidth/2/180);
+    var degX = (mouseY-(renderHeight/2))/(renderHeight/2/90);       
+    
+    camera.rotation.y = degY * Math.PI / 180;
+    camera.rotation.x = degX*-1 * Math.PI / 180;
+    // camera.position.x += ( mouseX - camera.position.x ) * .05;
+    // camera.position.y += ( - mouseY - camera.position.y ) * .05;
 
     renderer.setViewport(0, 0, renderWidth, renderHeight);
     renderer.setScissor(0, 0, renderWidth, renderHeight);
