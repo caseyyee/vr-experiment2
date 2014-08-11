@@ -101,13 +101,15 @@ function mprint(m) {
 
 function init() {
   container = document.getElementById("container");
-  camera = new THREE.PerspectiveCamera( 90, renderWidth / renderHeight, 0.010, 10000 );
+  camera = new THREE.PerspectiveCamera( 50, renderWidth / renderHeight, 0.010, 10000 );
   
   cameraLeft = new THREE.Camera();
   cameraRight = new THREE.Camera();
 
+
+  // test scene
   scene = new THREE.Scene();  
-  var geometry = new THREE.BoxGeometry(10, 5, 15);
+  var geometry = new THREE.BoxGeometry(5, 2.5, 8);
   var material = new THREE.MeshPhongMaterial({  // walls
       overdraw: 0.5, 
       color: 0xffFFff, 
@@ -120,21 +122,6 @@ function init() {
   var cube = new THREE.Mesh( geometry, material );
 
   scene.add(cube);
-
-
-  // yiles model import is chewed.  need to update model in real software to get rid of the need for these adjustments.
-  // var loader = new THREE.ColladaLoader();
-  // loader.load('assets/office.dae', function (result) {
-  //   var x = -1; 
-  //   var y = -1.2; 
-  //   var z = 0.9; 
-
-  //   var model = result.scene;
-  //   model.position.set(x, y, z);
-  //   model.rotation.x = -90 * Math.PI / 180;
-
-  //   scene.add(result.scene);
-  // });
 
   var heuristics = new THREE.Object3D();
     heuristics.position.set(0,0,-0.5)
@@ -164,16 +151,7 @@ function init() {
   light.position.set( 1, 1, 0 ); 
   scene.add( light );
 
-  // var light = new THREE.DirectionalLight( 0xffffff, .8 );
-  //       light.position.set( 2, 2, 20 );
-  //       scene.add( light );
-
-
-  // var directionalLight = new THREE.DirectionalLight( 0xffffff, 0.5 ); 
-  // directionalLight.position.set( 1, 1, 0 ); 
-  // directionalLight.castShadow = true;
-
-  // scene.add( directionalLight );
+  // end test scene
 
 
   var canvas = document.getElementById('three_canvas');
@@ -196,8 +174,8 @@ function setRenderSize(width, height, vr) {
     cameraRight.projectionMatrix = FovToProjection(vrHMD.getRecommendedEyeFieldOfView("right"));
     var leftTx = vrHMD.getEyeTranslation("left");
     var rightTx = vrHMD.getEyeTranslation("right");
-    cameraLeft.position.add(new THREE.Vector3(leftTx.x, leftTx.y, leftTx.z));
-    cameraRight.position.add(new THREE.Vector3(rightTx.x, rightTx.y, rightTx.z));
+    cameraLeft.position.sub(new THREE.Vector3(leftTx.x, leftTx.y, leftTx.z));
+    cameraRight.position.sub(new THREE.Vector3(rightTx.x, rightTx.y, rightTx.z));
 
     console.log(cameraLeft, cameraRight);
     renderer.setSize(width * 2, height, true, 2);
